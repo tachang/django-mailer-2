@@ -1,11 +1,6 @@
 from django.db import models
 from django_mailer import constants, managers
-
-try:
-    from django.utils.timezone import now
-except ImportError:
-    # Django < 1.4 without timezone support
-    from datetime.datetime import now
+from django.utils.timezone import now
 
 
 PRIORITIES = (
