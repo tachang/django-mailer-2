@@ -2,7 +2,12 @@ from django.core import mail
 from django.core.management import call_command
 from django_mailer import models
 from django_mailer.tests.base import MailerTestCase
-import datetime
+
+try:
+    from django.utils.timezone import now
+except ImportError:
+    # Django < 1.4 comes without timezone support
+    from datetime.datetime import now
 
 
 class TestCommands(MailerTestCase):
@@ -24,7 +29,7 @@ class TestCommands(MailerTestCase):
         self.queue_message(subject='deferred')
         models.QueuedMessage.objects\
                     .filter(message__subject__startswith='deferred')\
-                    .update(deferred=datetime.datetime.now())
+                    .update(deferred=now)
         queued_messages = models.QueuedMessage.objects.all()
         self.assertEqual(queued_messages.count(), 3)
         self.assertEqual(len(mail.outbox), 0)
@@ -44,7 +49,7 @@ class TestCommands(MailerTestCase):
         self.queue_message(subject='deferred 3')
         models.QueuedMessage.objects\
                     .filter(message__subject__startswith='deferred')\
-                    .update(deferred=datetime.datetime.now())
+                    .update(deferred=now)
         non_deferred_messages = models.QueuedMessage.objects.non_deferred()
         # Deferred messages are returned to the queue (nothing is sent).
         self.assertEqual(non_deferred_messages.count(), 1)
@@ -54,13 +59,13 @@ class TestCommands(MailerTestCase):
         # Check the --max-retries logic.
         models.QueuedMessage.objects\
                     .filter(message__subject='deferred')\
-                    .update(deferred=datetime.datetime.now(), retries=2)
+                    .update(deferred=now, retries=2)
         models.QueuedMessage.objects\
                     .filter(message__subject='deferred 2')\
-                    .update(deferred=datetime.datetime.now(), retries=3)
+                    .update(deferred=now, retries=3)
         models.QueuedMessage.objects\
                     .filter(message__subject='deferred 3')\
-                    .update(deferred=datetime.datetime.now(), retries=4)
+                    .update(deferred=now, retries=4)
         self.assertEqual(non_deferred_messages.count(), 1)
         call_command('retry_deferred', verbosity='0', max_retries=3)
         self.assertEqual(non_deferred_messages.count(), 3)
