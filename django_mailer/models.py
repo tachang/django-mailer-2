@@ -1,6 +1,5 @@
 from django.db import models
 from django_mailer import constants, managers
-import datetime
 
 try:
     from django.utils.timezone import now
