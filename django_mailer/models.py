@@ -1,12 +1,6 @@
 from django.db import models
 from django_mailer import constants, managers
-
-try:
-    from django.utils.timezone import now
-except ImportError:
-    # Django < 1.4 comes without timezone support
-    from datetime.datetime import now
-
+from datetime import datetime
 
 PRIORITIES = (
     (constants.PRIORITY_HIGH, 'high'),
@@ -36,7 +30,7 @@ class Message(models.Model):
     subject = models.CharField(max_length=255)
 
     encoded_message = models.TextField()
-    date_created = models.DateTimeField(default=now)
+    date_created = models.DateTimeField(default=datetime.utcnow)
 
     class Meta:
         ordering = ('date_created',)
@@ -58,7 +52,7 @@ class QueuedMessage(models.Model):
                                             default=constants.PRIORITY_NORMAL)
     deferred = models.DateTimeField(null=True, blank=True)
     retries = models.PositiveIntegerField(default=0)
-    date_queued = models.DateTimeField(default=now)
+    date_queued = models.DateTimeField(default=datetime.utcnow)
 
     objects = managers.QueueManager()
 
@@ -66,7 +60,7 @@ class QueuedMessage(models.Model):
         ordering = ('priority', 'date_queued')
 
     def defer(self):
-        self.deferred = now
+        self.deferred = datetime.utcnow()
         self.save()
 
 
@@ -79,7 +73,7 @@ class Blacklist(models.Model):
     
     """
     email = models.EmailField(max_length=200)
-    date_added = models.DateTimeField(default=now)
+    date_added = models.DateTimeField(default=datetime.utcnow)
 
     class Meta:
         ordering = ('-date_added',)
@@ -94,7 +88,7 @@ class Log(models.Model):
     """
     message = models.ForeignKey(Message, editable=False)
     result = models.PositiveSmallIntegerField(choices=RESULT_CODES)
-    date = models.DateTimeField(default=now)
+    date = models.DateTimeField(default=datetime.utcnow)
     log_message = models.TextField()
 
     class Meta:
